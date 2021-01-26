@@ -37,7 +37,8 @@ h1 {
     font-weight: 500;
 }
 h2 {
-    margin: 16px 0px 8px 0px;
+    font-weight: 400;
+    margin: 16px 0px 4px 0px;
 }
 .paper-title {
     padding: 16px 0px 16px 0px;
@@ -66,7 +67,6 @@ section {
     font-size: 20px;
 }
 .row {
-    font-size: 18px;
     margin: 16px 0px 16px 0px;
 }
 .authors {
@@ -92,7 +92,7 @@ hr {
     height: 1px;
     border: 0; 
     border-top: 1px solid #ddd;
-    margin: 8px 0px 8px 0px;
+    margin: 0;
 }
 .material-icons {
     vertical-align: -6px;
@@ -176,6 +176,13 @@ figure {
         <title>Neural Geometric Level of Detail: Real-time Rendering with Implicit 3D Surfaces</title>
         <meta property="og:description" content="Neural Geometric Level of Detail: Real-time Rendering with Implicit 3D Surfaces"/>
         <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:creator" content="@yongyuanxi">
+        <meta name="twitter:title" content="Neural Geometric Level of Detail: Real-time Rendering with Implicit 3D Surfaces">
+        <meta name="twitter:description" content="Neural signed distance functions (SDFs) are emerging as an effective representation for 3D shapes. SDFs encode 3D surfaces with a function of position that returns the closest distance to a surface. State-of-the-art methods typically encode the SDF with a large, fixed-size neural network to approximate complex shapes with implicit surfaces. Rendering these large networks is, however, computationally expensive since it requires many forward passes through the network for every pixel, making these representations impractical for real-time graphics applications. We introduce an efficient neural representation that, for the first time, enables real-time rendering of high-fidelity neural SDFs, while achieving state-of-the-art geometry reconstruction quality. We represent implicit surfaces using an octree-based feature volume which adaptively fits shapes with multiple discrete levels of detail (LODs), and enables continuous LOD with SDF interpolation. We further develop an efficient algorithm to directly render our novel neural SDF representation in real-time by querying only the necessary LODs with sparse octree traversal. We show that our representation is 2-3 orders of magnitude more efficient in terms of rendering speed compared to previous works. Furthermore, it produces state-of-the-art reconstruction quality for complex shapes under both 3D geometric and 2D image-space metrics.">
+        <meta name="twitter:image" content="https://nv-tlabs.github.io/nglod/assets/teaser_small.jpg">
+
     </head>
 
  <body>
@@ -207,7 +214,7 @@ figure {
         </div>
 
         <div style="clear: both">
-            <a class="paper-btn" href="https://nv-tlabs.github.io/">
+            <a class="paper-btn" href="assets/nglod.pdf">
                 <span class="material-icons"> description </span> 
                  Paper
             </a>
@@ -299,8 +306,8 @@ figure {
         <h2>Results</h2>
         <hr>
         <figure style="width: 600px;">
-            <a href="assets/comparison.jpg">
-                <img width="100%" src="assets/comparison.jpg">
+            <a href="assets/comparison.png">
+                <img width="100%" src="assets/comparison.png">
             </a>
             <p class="caption" style="margin-bottom: 24px;">
                 We qualitatively compare the mesh reconstructions. Only ours is able to recover fine details, with speeds 50&times; faster than FFN and comparable to NI. We render surface normals to highlight geometric details.
@@ -308,8 +315,8 @@ figure {
         </figure>
         
         <figure style="width: 100%;">
-            <a href="assets/sdf.jpg">
-                <img width="100%" src="assets/sdf.jpg">
+            <a href="assets/sdf.png">
+                <img width="100%" src="assets/sdf.png">
             </a>
             <p class="caption">
                 We test against two difficult analytic SDF examples from Shadertoy; the Oldcar, which contains a highly non-metric signed distance field, as well as the Mandelbulb, which is a recursive fractal structure that can only be expressed using implicit surfaces. Only our architecture can reasonably reconstruct these hard cases. We render surface normals to highlight geometric details.
@@ -331,18 +338,21 @@ figure {
     <section id="paper">
         <h2>Paper</h2>
         <hr>
-        <div class="row">
-            <div class="col-2">
-                <a href=""><img class="screenshot centered" src="assets/paper_preview.jpg"></a>
+        <div class="flex-row">
+            <div style="box-sizing: border-box; padding: 16px; margin: auto;">
+                <a href="assets/nglod.pdf"><img class="screenshot" src="assets/paper_preview.png"></a>
             </div>
-            <div class="col-2">
+            <div style="width: 50%">
                 <p><b>Neural Geometric Level of Detail: <br>Real-time Rendering with Implicit 3D Surfaces</b></p>
                 <p>Towaki Takikawa*, Joey Litalien*, Kangxue Yin, Karsten Kreis, Charles Loop, Derek Nowrouzezahrai, Alec Jacobson, Morgan McGuire & Sanja Fidler</p>
-                <p>*Authors contributed equally</p>
+                <p><i>*Authors contributed equally</i></p>
 
-                <div><span class="material-icons"> description </span><a href=""> Paper (arXiv pre-print)</a></div>
+                <div><span class="material-icons"> description </span><a href="assets/nglod.pdf"> Paper pre-print (PDF, 28.3 MB)</a></div>
+                <div><span class="material-icons"> description </span><a href="#"> ArXiv version</a></div>
                 <div><span class="material-icons"> insert_comment </span><a href="assets/nglod.bib"> BibTeX</a></div>
-                <div><span class="material-icons"> integration_instructions </span> Code (TBD)</div>
+                <div><span class="material-icons"> integration_instructions </span><a href="https://github.com/nv-tlabs/nglod"> Code (TBD)</a></div>
+
+                <p>Please send feedback and questions to <a href="https://tovacinni.github.io">Towaki Takikawa</a></p>
             </div>
         </div>
     </section>
