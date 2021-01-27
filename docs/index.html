@@ -183,6 +183,15 @@ figure {
         <meta name="twitter:description" content="Neural signed distance functions (SDFs) are emerging as an effective representation for 3D shapes. SDFs encode 3D surfaces with a function of position that returns the closest distance to a surface. State-of-the-art methods typically encode the SDF with a large, fixed-size neural network to approximate complex shapes with implicit surfaces. Rendering these large networks is, however, computationally expensive since it requires many forward passes through the network for every pixel, making these representations impractical for real-time graphics applications. We introduce an efficient neural representation that, for the first time, enables real-time rendering of high-fidelity neural SDFs, while achieving state-of-the-art geometry reconstruction quality. We represent implicit surfaces using an octree-based feature volume which adaptively fits shapes with multiple discrete levels of detail (LODs), and enables continuous LOD with SDF interpolation. We further develop an efficient algorithm to directly render our novel neural SDF representation in real-time by querying only the necessary LODs with sparse octree traversal. We show that our representation is 2-3 orders of magnitude more efficient in terms of rendering speed compared to previous works. Furthermore, it produces state-of-the-art reconstruction quality for complex shapes under both 3D geometric and 2D image-space metrics.">
         <meta name="twitter:image" content="https://nv-tlabs.github.io/nglod/assets/teaser_small.jpg">
 
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6HHDEXF452"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-6HHDEXF452');
+    </script>
+
     </head>
 
  <body>
@@ -207,10 +216,10 @@ figure {
         </div>
 
         <div class="affil-row">
-            <div class="col-4 text-center">NVIDIA</a><sup>1</sup></div>
-            <div class="col-4 text-center">University of Toronto</a><sup>2</sup></div>
-            <div class="col-4 text-center">McGill University<sup>3</sup></div>
-            <div class="col-4 text-center">Vector Institute<sup>4</sup></div>
+            <div class="col-4 text-center"><sup>1</sup>NVIDIA</a></div>
+            <div class="col-4 text-center"><sup>2</sup>University of Toronto</div>
+            <div class="col-4 text-center"><sup>3</sup>McGill University</div>
+            <div class="col-4 text-center"><sup>4</sup>Vector Institute</div>
         </div>
 
         <div style="clear: both">
@@ -347,8 +356,8 @@ figure {
                 <p>Towaki Takikawa*, Joey Litalien*, Kangxue Yin, Karsten Kreis, Charles Loop, Derek Nowrouzezahrai, Alec Jacobson, Morgan McGuire & Sanja Fidler</p>
                 <p><i>*Authors contributed equally</i></p>
 
-                <div><span class="material-icons"> description </span><a href="assets/nglod.pdf"> Paper pre-print (PDF, 28.3 MB)</a></div>
-                <div><span class="material-icons"> description </span><a href="#"> ArXiv version</a></div>
+                <div><span class="material-icons"> description </span><a href="assets/nglod.pdf"> Paper preprint (PDF, 6.2 MB)</a></div>
+                <div><span class="material-icons"> description </span><a href="#"> arXiv version</a></div>
                 <div><span class="material-icons"> insert_comment </span><a href="assets/nglod.bib"> BibTeX</a></div>
                 <div><span class="material-icons"> integration_instructions </span><a href="https://github.com/nv-tlabs/nglod"> Code (TBD)</a></div>
 
