@@ -1,8 +1,0 @@
-__pycache__
-sandbox.ipynb
-logs
-*.so
-imgs
-images*
-_*/
-.polyscope.ini

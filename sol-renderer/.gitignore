@@ -1,8 +1,0 @@
-build*
-*.spc
-*.pt
-*.pth
-libtorch*
-cub
-temp
-libigl
