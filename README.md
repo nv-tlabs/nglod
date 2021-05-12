@@ -174,5 +174,7 @@ Alex Evans, and Alex Bie at NVIDIA for interesting discussions throughout the pr
 We also thank Peter Shirley, Alexander Majercik, Jacob Munkberg, David Luebke, Jonah Philion and 
 Jun Gao for their help with paper editing.
 
+We also thank Clement Fuji Tsang for his help with the code release.
+
 The structure of this repo was inspired by PIFu: https://github.com/shunsukesaito/PIFu
 
