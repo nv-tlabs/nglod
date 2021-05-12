@@ -167,3 +167,12 @@ https://github.com/rogersce/cnpy
 
 https://github.com/krrish94/nerf-pytorch
 
+## Acknowledgements
+
+We would like to thank Jean-Francois Lafleche, Peter Shirley, Kevin Xie, Jonathan Granskog, 
+Alex Evans, and Alex Bie at NVIDIA for interesting discussions throughout the project. 
+We also thank Peter Shirley, Alexander Majercik, Jacob Munkberg, David Luebke, Jonah Philion and 
+Jun Gao for their help with paper editing.
+
+The structure of this repo was inspired by PIFu: https://github.com/shunsukesaito/PIFu
+
