@@ -1,77 +1,8 @@
-# Neural Geometric Level of Detail: Real-time Rendering with Implicit 3D Surfaces
-
-Official code release for NGLOD. For technical details, please refer to:
-
-**Neural Geometric Level of Detail: Real-time Rendering with Implicit 3D Surfaces**  
-[Towaki Takikawa*](https://tovacinni.github.io), [Joey Litalien*](https://joeylitalien.github.io), [Kangxue Xin](https://kangxue.org/), [Karsten Kreis](https://scholar.google.de/citations?user=rFd-DiAAAAAJ), [Charles Loop](https://research.nvidia.com/person/charles-loop), [Derek Nowrouzezahrai](http://www.cim.mcgill.ca/~derek/), [Alec Jacobson](https://www.cs.toronto.edu/~jacobson/), [Morgan McGuire](https://casual-effects.com/), and [Sanja Fidler](https://www.cs.toronto.edu/~fidler/)\
-In Computer Vision and Pattern Recognition (CVPR), 2021\
-**[[Paper](https://arxiv.org/abs/2101.10994)] [[Bibtex](https://nv-tlabs.github.io/nglod/assets/nglod.bib)] [[Project Page](https://nv-tlabs.github.io/nglod/)]**
-
-![](imgs/imgs_teaser.jpg)
-
-If you find this code useful, please consider citing:
-
-```
-@article{takikawa2021nglod,
-    title = {Neural Geometric Level of Detail: Real-time Rendering with Implicit {3D} Shapes}, 
-    author = {Towaki Takikawa and
-              Joey Litalien and 
-              Kangxue Yin and 
-              Karsten Kreis and 
-              Charles Loop and 
-              Derek Nowrouzezahrai and 
-              Alec Jacobson and 
-              Morgan McGuire and 
-              Sanja Fidler},
-    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-    year = {2021},
-}
-```
-
 ## Directory Structure
 
-`sol-renderer` contains our real-time rnedering code.
+`lib` contains all of our core codebase.
 
-`sdf-net` contains our training code.
-
-Within `sdf-net`:
-
-`sdf-net/lib` contains all of our core codebase.
-
-`sdf-net/app` contains standalone applications that users can run.
-
-## Getting started
-
-### Python dependencies
-The easiest way to get started is to create a virtual Python 3.8 environment:
-```
-conda create -n nglod python=3.8
-conda activate nglod
-pip install --upgrade pip
-pip install -r ./infra/requirements.txt
-```
-
-The code also relies on [OpenEXR](https://www.openexr.com/), which requires a system library:
-
-```
-sudo apt install libopenexr-dev 
-pip install pyexr
-```
-
-To see the full list of dependencies, see the [requirements](infra/requirements.txt).
-
-### Building CUDA extensions
-To build the corresponding CUDA kernels, run:
-```
-cd sdf-net/lib/extensions
-chmod +x build_ext.sh && ./build_ext.sh
-```
-
-The above instructions were tested on Ubuntu 18.04/20.04 with CUDA 10.2/11.1.
-
-**Note.** If you wish to use CUDA 10.X, you must install the appropriate 
-[CuPy](https://pypi.org/project/cupy/) module (e.g. `pip install cupy-cuda102`. Default: 11.1).
-
+`app` contains standalone applications that users can run.
 
 ## Training & Rendering
 
@@ -157,13 +88,4 @@ Examples of things that are considered `apps` include, but are not limited to:
 - training code
 - downstream applications
 
-## Third-Party Libraries
-
-This code includes code derived from 3 third-party libraries, all distributed under the MIT License:
-
-https://github.com/zekunhao1995/DualSDF
-
-https://github.com/rogersce/cnpy
-
-https://github.com/krrish94/nerf-pytorch
 

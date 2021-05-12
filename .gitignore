@@ -1,0 +1,5 @@
+.DS_Store
+*.sw*
+.ipynb_checkpoints
+compile_commands.json
+.vscode
