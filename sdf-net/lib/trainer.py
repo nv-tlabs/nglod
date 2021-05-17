@@ -294,12 +294,14 @@ class Trainer(object):
         loss_dict = self.net.loss(writer=self.writer)
         for k in loss_dict:
             if k[0] != '_':
-                loss += loss_dict[k].mean()
+                loss += loss_dict[k].sum()
 
         # Update logs
-        self.log_dict['l2_loss'] += loss_dict['_l2_loss'].mean().item()
+        self.log_dict['l2_loss'] += loss_dict['_l2_loss'].sum().item()
         self.log_dict['total_loss'] += loss.item()
         self.log_dict['total_iter_count'] += batch_size
+
+        loss /= batch_size
 
         # Backpropagate
         loss.backward()
