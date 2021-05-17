@@ -299,7 +299,7 @@ class Trainer(object):
         # Update logs
         self.log_dict['l2_loss'] += loss_dict['_l2_loss'].mean().item()
         self.log_dict['total_loss'] += loss.item()
-        self.log_dict['total_iter_count'] += 1
+        self.log_dict['total_iter_count'] += batch_size
 
         # Backpropagate
         loss.backward()
@@ -346,10 +346,10 @@ class Trainer(object):
 
         #log_text = 'EPOCH {:>{dec}}/{}'.format(epoch+1, self.args.epochs)
         log_text = 'EPOCH {}/{}'.format(epoch+1, self.args.epochs)
-        self.log_dict['total_loss'] /= self.log_dict['total_iter_count'] + 1e06
+        self.log_dict['total_loss'] /= self.log_dict['total_iter_count'] + 1e-6
         log_text += ' | total loss: {:>.3E}'.format(self.log_dict['total_loss'])
 
-        self.log_dict['l2_loss'] /= self.log_dict['total_iter_count'] + 1e06
+        self.log_dict['l2_loss'] /= self.log_dict['total_iter_count'] + 1e-6
         log_text += ' | l2 loss: {:>.3E}'.format(self.log_dict['l2_loss'])
         
         self.writer.add_scalar('Loss/l2_loss', self.log_dict['l2_loss'], epoch)
