@@ -19,20 +19,25 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
 import torch
 from .per_face_normals import per_face_normals
 
-def area_weighted_distribution(mesh : torch.Tensor, normals : torch.Tensor = None):
+def area_weighted_distribution(
+    V : torch.Tensor,
+    F : torch.Tensor, 
+    normals : torch.Tensor = None):
     """Construct discrete area weighted distribution over triangle mesh.
 
     Args:
-        mesh (torch.Tensor): #F, 3, 3 array of vertices
+        V (torch.Tensor): #V, 3 array of vertices
+        F (torch.Tensor): #F, 3 array of indices
         normals (torch.Tensor): normals (if precomputed)
         eps (float): epsilon
     """
 
     if normals is None:
-        normals = per_face_normals(mesh)
+        normals = per_face_normals(V, F)
     areas = torch.norm(normals, p=2, dim=1) * 0.5
     areas /= torch.sum(areas) + 1e-10
     

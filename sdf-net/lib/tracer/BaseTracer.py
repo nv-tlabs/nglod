@@ -19,35 +19,34 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import numpy as np
 
-import torch
-from .random_face import random_face
-from .area_weighted_distribution import area_weighted_distribution
+from ..utils import setparam
 
-def sample_surface(
-    V : torch.Tensor,
-    F : torch.Tensor,
-    num_samples : int,
-    distrib = None):
-    """Sample points and their normals on mesh surface.
+class BaseTracer(object):
+    """Virtual base class for tracer"""
 
-    Args:
-        V (torch.Tensor): #V, 3 array of vertices
-        F (torch.Tensor): #F, 3 array of indices
-        num_samples (int): number of surface samples
-        distrib: distribution to use. By default, area-weighted distribution is used
-    """
-    if distrib is None:
-        distrib = area_weighted_distribution(V, F)
+    def __init__(self,
+        args                 = None,
+        camera_clamp : list  = None,
+        step_size    : float = None,
+        grad_method  : str   = None,
+        num_steps    : int   = None, # samples for raymaching, iterations for sphere trace
+        min_dis      : float = None): 
 
-    # Select faces & sample their surface
-    fidx, normals = random_face(V, F, num_samples, distrib)
-    f = V[fidx]
+        self.args = args
+        self.camera_clamp = setparam(args, camera_clamp, 'camera_clamp')
+        self.step_size = setparam(args, step_size, 'step_size')
+        self.grad_method = setparam(args, grad_method, 'grad_method')
+        self.num_steps = setparam(args, num_steps, 'num_steps')
+        self.min_dis = setparam(args, min_dis, 'min_dis')
 
-    u = torch.sqrt(torch.rand(num_samples)).to(V.device).unsqueeze(-1)
-    v = torch.rand(num_samples).to(V.device).unsqueeze(-1)
-
-    samples = (1 - u) * f[:,0,:] + (u * (1 - v)) * f[:,1,:] + u * v * f[:,2,:]
+        self.inv_num_steps = 1.0 / self.num_steps
+        self.diagonal = np.sqrt(3) * 2.0
     
-    return samples, normals
+    def __call__(self, *args, **kwargs):
+        return self.forward(*args, **kwargs)
 
+    def forward(self, net, ray_o, ray_d):
+        """Base implementation for forward"""
+        raise NotImplementedError

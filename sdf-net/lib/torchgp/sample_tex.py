@@ -19,35 +19,39 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 import torch
-from .random_face import random_face
-from .area_weighted_distribution import area_weighted_distribution
+import torch.nn.functional as F
 
-def sample_surface(
-    V : torch.Tensor,
-    F : torch.Tensor,
-    num_samples : int,
-    distrib = None):
-    """Sample points and their normals on mesh surface.
+def sample_tex(
+    Tp : torch.Tensor, # points [N ,2] 
+    TM : torch.Tensor, # material indices [N]
+    materials):
 
-    Args:
-        V (torch.Tensor): #V, 3 array of vertices
-        F (torch.Tensor): #F, 3 array of indices
-        num_samples (int): number of surface samples
-        distrib: distribution to use. By default, area-weighted distribution is used
-    """
-    if distrib is None:
-        distrib = area_weighted_distribution(V, F)
+    max_idx = TM.max()
+    assert(max_idx > -1 and "No materials detected! Check the material definiton on your mesh.")
 
-    # Select faces & sample their surface
-    fidx, normals = random_face(V, F, num_samples, distrib)
-    f = V[fidx]
+    rgb = torch.zeros(Tp.shape[0], 3, device=Tp.device)
 
-    u = torch.sqrt(torch.rand(num_samples)).to(V.device).unsqueeze(-1)
-    v = torch.rand(num_samples).to(V.device).unsqueeze(-1)
+    Tp = (Tp * 2.0) - 1.0
+    # The y axis is flipped from what UV maps generally expects vs in PyTorch
+    Tp[...,1] *= -1
 
-    samples = (1 - u) * f[:,0,:] + (u * (1 - v)) * f[:,1,:] + u * v * f[:,2,:]
-    
-    return samples, normals
+    for i in range(max_idx+1):
+        mask = (TM == i)
+        if mask.sum() == 0:
+            continue
+        if 'diffuse_texname' not in materials[i]:
+            if 'diffuse' in materials[i]:
+                rgb[mask] = materials[i]['diffuse'].to(Tp.device)
+            continue
+
+        map = materials[i]['diffuse_texname'][...,:3].permute(2, 0, 1)[None].to(Tp.device)
+        grid = Tp[mask]
+        grid = grid.reshape(1, grid.shape[0], 1, grid.shape[1])
+        _rgb = F.grid_sample(map, grid, mode='bilinear', padding_mode='reflection', align_corners=True)
+        _rgb = _rgb[0,:,:,0].permute(1,0)
+        rgb[mask] = _rgb
+
+    return rgb
+
 

@@ -43,20 +43,6 @@ if __name__ == "__main__":
 
     args, args_str = parse_options()
     log.info(f'Parameters: \n{args_str}')
-    if args.analytic:
-        for filename in glob.glob(os.path.join(args.glsl_path, '*/*.glsl'))[::-1]:
-            name = os.path.basename(filename).split('.')[0]
-
-            if args.exclude and name in args.exclude:
-                continue
-            if args.include and name not in args.include:
-                continue
-            
-            log.info(f'Training {name}')
-            model = Trainer(args, args_str, name)
-            model.train()
-    else:
-        log.info(f'Training on {args.dataset_path}')
-        model = Trainer(args, args_str, 'mesh')
-        model.train()
-
+    log.info(f'Training on {args.dataset_path}')
+    model = Trainer(args, args_str)
+    model.train()

@@ -19,6 +19,7 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -164,6 +165,8 @@ def normalized_slice(width, height, dim=0, depth=0.0, device='cuda'):
         pts = torch.cat([window[...,0:1], depth_pts, window[...,1:2]], dim=-1)
     elif dim==2:
         pts = torch.cat([window[...,0:1], window[...,1:2], depth_pts], dim=-1)
+    else:
+        assert(False, "dim is invalid!")
     pts[...,1] *= -1
     return pts
 
@@ -174,7 +177,7 @@ def unnormalized_grid(width, height, device='cuda'):
     return uv
 
 
-def look_at(f, t, width, height, mode='ortho', fv=90.0, device='cuda'):
+def look_at(f, t, width, height, mode='ortho', fov=90.0, device='cuda'):
     """Vectorized look-at function, returns an array of ray origins and directions
     URL: https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/lookat-function
     """
@@ -185,8 +188,8 @@ def look_at(f, t, width, height, mode='ortho', fv=90.0, device='cuda'):
     camera_up = F.normalize(torch.cross(camera_right, camera_view), dim=0)
 
     coord = normalized_grid(width, height, device=device)
-    ray_origin = camera_right * coord[...,0,np.newaxis] * np.tan(np.radians(fv/2)) + \
-                 camera_up * coord[...,1,np.newaxis] * np.tan(np.radians(fv/2)) + \
+    ray_origin = camera_right * coord[...,0,np.newaxis] * np.tan(np.radians(fov/2)) + \
+                 camera_up * coord[...,1,np.newaxis] * np.tan(np.radians(fov/2)) + \
                  camera_origin + camera_view
     ray_origin = ray_origin.reshape(-1, 3)
     ray_offset = camera_view.unsqueeze(0).repeat(ray_origin.shape[0], 1)
@@ -285,5 +288,4 @@ def spherical_envmap_numpy(ray_dir, normal):
     vN = np.clip(vN, 0, 1)
     vN[np.isnan(vN)] = 0
     return vN
-
 

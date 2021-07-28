@@ -19,6 +19,7 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
 import argparse
 from datetime import datetime
 import glob
@@ -27,6 +28,7 @@ import subprocess
 import sys
 import pprint
 import logging as log
+import multiprocessing
 
 import matplotlib.pyplot
 from PIL import Image
@@ -84,7 +86,7 @@ class Trainer(object):
     # __init__
     #######################
     
-    def __init__(self, args, args_str, model_name):
+    def __init__(self, args, args_str):
         """Constructor.
         
         Args:
@@ -92,14 +94,14 @@ class Trainer(object):
             args_str (str): string representation of all parameters
             model_name (str): model nametag
         """
-        
+        #torch.multiprocessing.set_start_method('spawn')
+        multiprocessing.set_start_method('spawn')
+
         self.args = args 
         self.args_str = args_str
         
         self.args.epochs += 1
 
-        self.model_name = model_name
-        
         self.timer = PerfTimer(activate=self.args.perf)
         self.timer.reset()
         
@@ -122,6 +124,8 @@ class Trainer(object):
         self.timer.check('set_dataset')
         self.set_network()
         self.timer.check('set_network')
+        #self.set_dataset()
+        #self.timer.check('set_dataset')
         self.set_optimizer()
         self.timer.check('set_optimizer')
         self.set_renderer()
@@ -146,23 +150,12 @@ class Trainer(object):
         The code uses the mesh dataset by default, unless --analytic is specified in CLI.
         """
 
-        # Construct geometry dataset
-        if self.args.analytic:
-            assert False and "Analytic Dataset not yet released."
-            self.train_dataset = AnalyticDataset(self.args, '../', [self.model_name], pe=self.args.pos_enc, 
-                                                 modes=self.args.sample_mode, normal=self.args.normal)
-
-            if self.args.valid:
-                raise NotImplementedError
-            log.info("Loaded analytic SDF dataset")
-        else:
-            # NOTE: Around 100000 seems to be the upperbound of this 
-            self.train_dataset = globals()[self.args.mesh_dataset](self.args)
-            
-            self.train_data_loader = DataLoader(self.train_dataset, batch_size=self.args.batch_size, 
-                                                shuffle=True, pin_memory=True, num_workers=4)
-            self.timer.check('create_dataloader')
-            log.info("Loaded mesh dataset")
+        self.train_dataset = globals()[self.args.mesh_dataset](self.args)
+        
+        self.train_data_loader = DataLoader(self.train_dataset, batch_size=self.args.batch_size, 
+                                            shuffle=True, pin_memory=True, num_workers=0)
+        self.timer.check('create_dataloader')
+        log.info("Loaded mesh dataset")
             
     def set_network(self):
         """
@@ -173,9 +166,7 @@ class Trainer(object):
         if self.args.jit:
             self.net = torch.jit.script(self.net)
 
-        if self.args.freeze:
-            self.net.freeze()
-        elif self.args.pretrained:
+        if self.args.pretrained:
             self.net.load_state_dict(torch.load(self.args.pretrained))
 
         self.net.to(self.device)
@@ -200,7 +191,8 @@ class Trainer(object):
         Override this function to use custom renderers.
         """
         # Renderer for logging
-        self.renderer = Renderer(self.args, self.device, sdf_net=self.net).eval()
+        self.log_tracer = globals()[self.args.tracer](self.args)
+        self.renderer = Renderer(self.log_tracer, args=self.args)
 
     def set_logger(self):
         """
@@ -208,10 +200,11 @@ class Trainer(object):
         """
         if self.args.exp_name:
             self.log_fname = self.args.exp_name
+            self.log_fname += f'/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
         else:
-            self.log_fname = f'{datetime.now().strftime("%Y%m%d-%H%M%S")}_{self.model_name}'
+            self.log_fname = f'{datetime.now().strftime("%Y%m%d-%H%M%S")}'
         self.log_dir = os.path.join(self.args.logs, self.log_fname)
-        self.writer = SummaryWriter(self.log_dir)
+        self.writer = SummaryWriter(self.log_dir, purge_step=0)
         self.writer.add_text('Parameters', self.args_str)
 
         log.info('Model configured and ready to go')
@@ -236,11 +229,25 @@ class Trainer(object):
         # The DataLoader is refreshed befored every epoch, because by default, the dataset refreshes
         # (resamples) after every epoch.
 
-        if self.args.resample:
+        self.loss_lods = list(range(0, self.args.num_lods))
+        if self.args.grow_every > 0:
+            self.grow(epoch)
+        
+        if self.args.only_last:
+            self.loss_lods = self.loss_lods[-1:]
+
+        if epoch % self.args.resample_every == 0:
+            self.resample(epoch)
+            log.info("Reset DataLoader")
             self.train_data_loader = DataLoader(self.train_dataset, batch_size=self.args.batch_size, 
-                                                    shuffle=True, pin_memory=True, num_workers=4)
+                                                    shuffle=True, pin_memory=True, num_workers=0)
             self.timer.check('create_dataloader')
 
+        if epoch == self.args.freeze:
+            log.info('Freezing network...')
+            log.info("Total number of parameters: {}".format(sum(p.numel() for p in self.net.parameters())))
+            self.net.freeze()
+            self.net.to(self.device)
 
         self.net.train()
         
@@ -250,6 +257,23 @@ class Trainer(object):
         self.log_dict['total_iter_count'] = 0
 
         self.timer.check('pre_epoch done')
+
+    def grow(self, epoch):
+        stage = min(self.args.num_lods, (epoch // self.args.grow_every) + 1) # 1 indexed
+
+        if self.args.growth_strategy == 'onebyone':
+            self.loss_lods = [stage-1]
+        elif self.args.growth_strategy == 'increase':
+            self.loss_lods = list(range(0, stage))
+        elif self.args.growth_strategy == 'shrink':
+            self.loss_lods = list(range(0, self.args.num_lods))[stage-1:] 
+        elif self.args.growth_strategy == 'finetocoarse':
+            self.loss_lods = list(range(0, self.args.num_lods))[self.args.num_lods-stage:] 
+        elif self.args.growth_strategy == 'onlylast':
+            self.loss_lods = list(range(0, self.args.num_lods))[-1:] 
+        else:
+            raise NotImplementedError
+
 
     #######################
     # iterate
@@ -275,28 +299,36 @@ class Trainer(object):
 
         # Map to device
 
-        ids = data[0].to(self.device)
-        pts = data[1].to(self.device)
-        gts = data[2].to(self.device)
-        nrm = data[3].to(self.device) if self.args.get_normals else None
+        pts = data[0].to(self.device)
+        gts = data[1].to(self.device)
+        nrm = data[2].to(self.device) if self.args.get_normals else None
 
         # Prepare for inference
         batch_size = pts.shape[0]
         self.net.zero_grad()
 
-        # Predict distances
-        d = self.net(pts, gts=gts, grad=nrm, ids=ids)
-
         # Calculate loss
         loss = 0
-        
-        loss_dict = self.net.loss(writer=self.writer)
-        for k in loss_dict:
-            if k[0] != '_':
-                loss += loss_dict[k].sum()
+
+        l2_loss = 0.0
+        _l2_loss = 0.0
+
+        preds = []
+        if self.args.return_lst:
+            preds = self.net.sdf(pts, return_lst=self.args.return_lst)
+            preds = [preds[i] for i in self.loss_lods]
+        else:
+            for i, lod in enumerate(self.loss_lods):
+                preds.append(self.net.sdf(pts, lod=lod))
+
+        for pred in preds:
+            _l2_loss = ((pred - gts)**2).sum()
+            l2_loss += _l2_loss
+
+        loss += l2_loss
 
         # Update logs
-        self.log_dict['l2_loss'] += loss_dict['_l2_loss'].sum().item()
+        self.log_dict['l2_loss'] += _l2_loss.item()
         self.log_dict['total_loss'] += loss.item()
         self.log_dict['total_iter_count'] += batch_size
 
@@ -330,8 +362,6 @@ class Trainer(object):
             self.save_model(epoch)
         if epoch % self.args.render_every == 0:
             self.render_tb(epoch)
-        if epoch % self.args.resample_every == 0:
-            self.resample(epoch)
 
         self.timer.check('post_epoch done')
     
@@ -345,7 +375,6 @@ class Trainer(object):
         """
         # Average over iterations
 
-        #log_text = 'EPOCH {:>{dec}}/{}'.format(epoch+1, self.args.epochs)
         log_text = 'EPOCH {}/{}'.format(epoch+1, self.args.epochs)
         self.log_dict['total_loss'] /= self.log_dict['total_iter_count'] + 1e-6
         log_text += ' | total loss: {:>.3E}'.format(self.log_dict['total_loss'])
@@ -364,18 +393,20 @@ class Trainer(object):
         """
         Override this function to change render logging.
         """
-
+        self.net.eval()
         for d in range(self.args.num_lods):
             self.net.lod = d
-            out = self.renderer.shade_images(f=self.args.camera_origin, 
-                                             t=self.args.camera_lookat).image().byte().numpy()
+            out = self.renderer.shade_images(self.net,
+                                             f=self.args.camera_origin, 
+                                             t=self.args.camera_lookat,
+                                             fov=self.args.camera_fov).image().byte().numpy()
             self.writer.add_image(f'Depth/{d}', out.depth.transpose(2,0,1), epoch)
             self.writer.add_image(f'Hit/{d}', out.hit.transpose(2,0,1), epoch)
             self.writer.add_image(f'Normal/{d}', out.normal.transpose(2,0,1), epoch)
             self.writer.add_image(f'RGB/{d}', out.rgb.transpose(2,0,1), epoch)
-            out_x = self.renderer.sdf_slice(dim=0)
-            out_y = self.renderer.sdf_slice(dim=1)
-            out_z = self.renderer.sdf_slice(dim=2)
+            out_x = self.renderer.sdf_slice(self.net, dim=0)
+            out_y = self.renderer.sdf_slice(self.net, dim=1)
+            out_z = self.renderer.sdf_slice(self.net, dim=2)
             self.writer.add_image(f'Cross-section/X/{d}', image_to_np(out_x), epoch)
             self.writer.add_image(f'Cross-section/Y/{d}', image_to_np(out_y), epoch)
             self.writer.add_image(f'Cross-section/Z/{d}', image_to_np(out_z), epoch)
@@ -385,16 +416,25 @@ class Trainer(object):
         """
         Override this function to change model saving.
         """
+        log_comps = self.log_fname.split('/')
+        if len(log_comps) > 1:
+            _path = os.path.join(self.args.model_path, *log_comps[:-1])
+            if not os.path.exists(_path):
+                os.makedirs(_path)
+
         if not os.path.exists(self.args.model_path):
             os.makedirs(self.args.model_path)
 
-        if self.args.save_all:
+        if self.args.save_as_new:
             model_fname = os.path.join(self.args.model_path, f'{self.log_fname}-{epoch}.pth')
         else:
             model_fname = os.path.join(self.args.model_path, f'{self.log_fname}.pth')
         
         log.info(f'Saving model checkpoint to: {model_fname}')
-        torch.save(self.net.state_dict(), model_fname)
+        if self.args.save_all:
+            torch.save(self.net, model_fname)
+        else:
+            torch.save(self.net.state_dict(), model_fname)
 
         if self.latents is not None:
             model_fname = os.path.join(self.args.model_path, f'{self.log_fname}_latents.pth')
@@ -404,8 +444,7 @@ class Trainer(object):
         """
         Override this function to change resampling.
         """
-        if self.args.resample: 
-            self.train_dataset.resample()
+        self.train_dataset.resample()
 
     #######################
     # train
@@ -427,6 +466,8 @@ class Trainer(object):
 
             if self.train_data_loader is not None:
                 self.dataset_size = len(self.train_data_loader)
+            
+            self.timer.check('iteration start')
 
             self.iterate(epoch)
 
@@ -446,13 +487,13 @@ class Trainer(object):
 
     def validate(self, epoch):
         
-        val_dict = self.validator.validate(epoch)
+        val_dict = self.validator.validate(epoch, self.loss_lods)
         
-        log_text = 'EPOCH {}/{}'.format(epoch+1, self.args.epochs)
+        log_text = 'EPOCH {}/{}'.format(epoch, self.args.epochs)
 
         for k, v in val_dict.items():
             score_total = 0.0
-            for lod, score in enumerate(v):
+            for lod, score in zip(self.loss_lods, v):
                 self.writer.add_scalar(f'Validation/{k}/{lod}', score, epoch)
                 score_total += score
             log_text += ' | {}: {:.2f}'.format(k, score_total / len(v))

@@ -19,6 +19,7 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
 import argparse
 import pprint
 
@@ -46,6 +47,8 @@ def parse_options(return_parser=False):
                               help='Utility argument for debug output and viz.')
     global_group.add_argument('--seed', type=int,
                               help='NumPy random seed.')
+    global_group.add_argument('--ngc', action='store_true',
+                              help='Use NGC arguments.')
 
     # Architecture for network
     net_group = parser.add_argument_group('net')
@@ -59,10 +62,14 @@ def parse_options(return_parser=False):
                           help='Feature map dimension')
     net_group.add_argument('--feature-size', type=int, default=4,
                           help='Feature map size (w/h)')
-    net_group.add_argument('--num-layers', type=int, default=5,
+    net_group.add_argument('--joint-feature', action='store_true',
+                          help='Use joint features')
+    net_group.add_argument('--num-layers', type=int, default=1,
                           help='Number of layers for the decoder')
     net_group.add_argument('--num-lods', type=int, default=1,
                           help='Number of LODs')
+    net_group.add_argument('--base-lod', type=int, default=2,
+                          help='Base level LOD')
     net_group.add_argument('--ff-dim', type=int, default=-1,
                           help='Fourier feature dimension.')
     net_group.add_argument('--ff-width', type=float, default='16.0',
@@ -73,14 +80,16 @@ def parse_options(return_parser=False):
                           help='Path to pretrained model weights.')
     net_group.add_argument('--periodic', action='store_true',
                           help='Use periodic activations.')
-    net_group.add_argument('--noskip', action='store_true',
-                          help='Do not use skip connections.')
-    net_group.add_argument('--freeze', action='store_true',
-                          help='Freeze the network.')
+    net_group.add_argument('--skip', type=int, default=None,
+                          help='Layer to have skip connection.')
+    net_group.add_argument('--freeze', type=int, default=-1,
+                          help='Freeze the network at the specified epoch.')
     net_group.add_argument('--pos-invariant', action='store_true',
                           help='Use a position invariant network.')
     net_group.add_argument('--joint-decoder', action='store_true',
                           help='Use a single joint decoder.')
+    net_group.add_argument('--feat-sum', action='store_true',
+                          help='Sum the features.')
 
     # Arguments for dataset
     data_group = parser.add_argument_group('dataset')
@@ -101,12 +110,18 @@ def parse_options(return_parser=False):
     data_group.add_argument('--train-valid-split', type=str, default=None,
                             help='Path to train/valid dataset split dictionary (JSON)')
     data_group.add_argument('--num-samples', type=int, default=100000,
-                            help='Number of samples per mode')
+                            help='Number of samples per mode (or per epoch for SPC)')
+    data_group.add_argument('--samples-per-voxel', type=int, default=256,
+                            help='Number of samples per voxel (for SPC)')
     data_group.add_argument('--sample-mode', type=str, nargs='*', 
                             default=['rand', 'near', 'near', 'trace', 'trace'],
                             help='The sampling scheme to be used.')
     data_group.add_argument('--trim', action='store_true',
                             help='Trim inner triangles (will destroy UVs!).')
+    data_group.add_argument('--sample-tex', action='store_true',
+                            help='Sample textures')
+    data_group.add_argument('--block-res', type=int, default=7,
+                            help='Resolution of blocks')
 
     # Analytic Dataset
     data_group.add_argument('--include', nargs='*', 
@@ -130,8 +145,8 @@ def parse_options(return_parser=False):
                              help='Learning rate.')
     optim_group.add_argument('--loss', nargs='+', type=str, 
                              default=['l2_loss'], help='Objective function/loss.')
-    optim_group.add_argument('--gradient-mode', type=str, choices=['autodiff', 'finitediff'], 
-                             default='autodiff', help='Mode of gradient computations.')
+    optim_group.add_argument('--grad-method', type=str, choices=['autodiff', 'finitediff'], 
+                             default='finitediff', help='Mode of gradient computations.')
  
     # Arguments for training
     train_group = parser.add_argument_group('trainer')
@@ -139,23 +154,39 @@ def parse_options(return_parser=False):
                              help='Number of epochs to run the training.')
     train_group.add_argument('--batch-size', type=int, default=512, 
                              help='Batch size for the training.')
-    train_group.add_argument('--resample', action='store_true', 
-                             help='Resample the dataset after every epoch.')
-    train_group.add_argument('--resample-every', type=int, default=1,
+    train_group.add_argument('--only-last', action='store_true', 
+                             help='Train only last LOD.')
+    train_group.add_argument('--resample-every', type=int, default=10,
                              help='Resample every N epochs')
     train_group.add_argument('--model-path', type=str, default='_results/models', 
                              help='Path to save the trained models.')
-    train_group.add_argument('--save-all', action='store_true', 
+    train_group.add_argument('--save-as-new', action='store_true', 
                              help='Save the model at every epoch (no overwrite).')
     train_group.add_argument('--save-every', type=int, default=1, 
                              help='Save the model at every N epoch.')
+    train_group.add_argument('--save-all', action='store_true', 
+                             help='Save the entire model')
     train_group.add_argument('--latent', action='store_true', 
                              help='Train latent space.')
+    train_group.add_argument('--return-lst', action='store_true', 
+                             help='Returns a list of predictions (optimization).')
     train_group.add_argument('--latent-dim', type=int, default=128, 
                              help='Latent vector dimension.')
     train_group.add_argument('--logs', type=str, default='_results/logs/runs/',
                              help='Log file directory for checkpoints.')
-
+    train_group.add_argument('--grow-every', type=int, default=-1,
+                             help='Grow network every X epochs')
+    train_group.add_argument('--loss-sample', type=int, default=-1,
+                             help='Sample Nx points for loss importance sampling')
+    # One by one trains one level at a time. 
+    # Increase starts from [0] and ends up at [0,...,N]
+    # Shrink strats from [0,...,N] and ends up at [N]
+    # Fine to coarse starts from [N] and ends up at [0,...,N]
+    # Only last starts and ends at [N]
+    train_group.add_argument('--growth-strategy', type=str, default='increase',
+                             choices=['onebyone','increase','shrink', 'finetocoarse', 'onlylast'],
+                             help='Strategy for coarse-to-fine training')
+            
     # Arguments for renderer
     renderer_group = parser.add_argument_group('renderer')
     renderer_group.add_argument('--sol', action='store_true',
@@ -167,7 +198,7 @@ def parse_options(return_parser=False):
     renderer_group.add_argument('--matcap-path', type=str, 
                                 default='data/matcap/green.png', 
                                 help='Path to the matcap texture to render with.')
-    renderer_group.add_argument('--camera-origin', type=float, nargs=3, default=[2.5, 2.5, 2.5], 
+    renderer_group.add_argument('--camera-origin', type=float, nargs=3, default=[2.8, 2.8, 2.8], 
                                 help='Camera origin.')
     renderer_group.add_argument('--camera-lookat', type=float, nargs=3, default=[0, 0, 0], 
                                 help='Camera look-at/target point.')
@@ -175,7 +206,7 @@ def parse_options(return_parser=False):
                                 help='Camera field of view (FOV).')
     renderer_group.add_argument('--camera-proj', type=str, choices=['ortho', 'persp'], default='persp', 
                                 help='Camera projection.')
-    renderer_group.add_argument('--camera-clamp', nargs=2, type=float, default=[-5, 5], 
+    renderer_group.add_argument('--camera-clamp', nargs=2, type=float, default=[-5, 10], 
                                 help='Camera clipping bounds.')
     renderer_group.add_argument('--lod', type=int, default=None, 
                                 help='LOD level to use.')
@@ -183,8 +214,12 @@ def parse_options(return_parser=False):
                                 help='LOD interpolation value')
     renderer_group.add_argument('--render-every', type=int, default=1,
                                 help='Render every N epochs')
+    renderer_group.add_argument('--num-steps', type=int, default=256,
+                                help='Number of steps')
     renderer_group.add_argument('--step-size', type=float, default=1.0,
                                 help='Scale of step size')
+    renderer_group.add_argument('--min-dis', type=float, default=0.0003,
+                                help='Minimum distance away from surface')
     renderer_group.add_argument('--ground-height', type=float,
                                 help='Ground plane y coords')
     renderer_group.add_argument('--tracer', type=str, default='SphereTracer', 

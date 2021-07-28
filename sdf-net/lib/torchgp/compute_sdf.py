@@ -19,35 +19,23 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
+import pysdf
 import torch
-from .random_face import random_face
-from .area_weighted_distribution import area_weighted_distribution
+import numpy as np
+import mesh2sdf
 
-def sample_surface(
+def compute_sdf(
     V : torch.Tensor,
     F : torch.Tensor,
-    num_samples : int,
-    distrib = None):
-    """Sample points and their normals on mesh surface.
+    points : torch.Tensor):
+    """Given a [N,3] list of points, returns a [N] list of SDFs for a mesh."""
 
-    Args:
-        V (torch.Tensor): #V, 3 array of vertices
-        F (torch.Tensor): #F, 3 array of indices
-        num_samples (int): number of surface samples
-        distrib: distribution to use. By default, area-weighted distribution is used
-    """
-    if distrib is None:
-        distrib = area_weighted_distribution(V, F)
+    mesh = V[F]
 
-    # Select faces & sample their surface
-    fidx, normals = random_face(V, F, num_samples, distrib)
-    f = V[fidx]
+    points_cpu = points.cpu().numpy().reshape(-1).astype(np.float64)
+    mesh_cpu = mesh.cpu().numpy().reshape(-1).astype(np.float64)
 
-    u = torch.sqrt(torch.rand(num_samples)).to(V.device).unsqueeze(-1)
-    v = torch.rand(num_samples).to(V.device).unsqueeze(-1)
-
-    samples = (1 - u) * f[:,0,:] + (u * (1 - v)) * f[:,1,:] + u * v * f[:,2,:]
+    # Legacy, open source mesh2sdf code
+    dist = mesh2sdf.mesh2sdf_gpu(points.contiguous(), mesh)[0]
     
-    return samples, normals
-
+    return dist

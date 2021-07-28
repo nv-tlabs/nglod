@@ -24,13 +24,16 @@ import os
 import torch
 from torch.utils.data import Dataset
 
+import numpy as np
+import pysdf
 import mesh2sdf
+import spc
 
-from ..meshutils import trim_obj_to_file, load_obj, convert_to_nvc
-from ..torchgp import point_sample, sample_surface
+from ..meshutils import trim_obj_to_file
+from ..torchgp import load_obj, point_sample, sample_surface, compute_sdf, normalize
+from ..PsDebugger import PsDebugger
 
-def setparam(param, argsparam):
-    return param if param is not None else argsparam
+from ..utils import PerfTimer, setparam
 
 class MeshDataset(Dataset):
     """Base class for single mesh datasets."""
@@ -43,82 +46,66 @@ class MeshDataset(Dataset):
         get_normals = None,
         seed = None,
         num_samples = None,
-        trim = False
+        trim = None,
+        sample_tex = None
     ):
-        if args is None:
-            self.dataset_path = dataset_path
-            self.sample_mode = sample_mode
-            self.get_normals = get_normals
-            self.num_samples = num_samples
-            self.raw_obj_path = raw_obj_path
-            self.trim = trim
-        else:
-            self.dataset_path = setparam(dataset_path, args.dataset_path)
-            self.sample_mode = setparam(sample_mode, args.sample_mode)
-            self.get_normals = setparam(get_normals, args.get_normals)
-            self.num_samples = setparam(num_samples, args.num_samples)
-            self.raw_obj_path = setparam(raw_obj_path, args.raw_obj_path)
-            self.trim = setparam(trim, args.trim)
-        
-        if self.raw_obj_path is not None and not os.path.exists(self.dataset_path):
-            self.mesh = trim_obj_to_file(self.raw_obj_path, self.dataset_path)
-        elif not os.path.exists(self.dataset_path):
-            assert False and "Data does not exist and raw obj file not specified"
-        else:
-            V, F = load_obj(self.dataset_path)
-            self.mesh = convert_to_nvc(V, F)
+        self.args = args
+        self.dataset_path = setparam(args, dataset_path, 'dataset_path')
+        self.raw_obj_path = setparam(args, raw_obj_path, 'raw_obj_path')
+        self.sample_mode = setparam(args, sample_mode, 'sample_mode')
+        self.get_normals = setparam(args, get_normals, 'get_normals')
+        self.num_samples = setparam(args, num_samples, 'num_samples')
+        self.trim = setparam(args, trim, 'trim')
+        self.sample_tex = setparam(args, sample_tex, 'sample_tex')
 
-        self.ids, self.p, self.d, self.nrm = self._sample()
+        # Possibly remove... or fix trim obj
+        #if self.raw_obj_path is not None and not os.path.exists(self.dataset_path):
+        #    _, _, self.mesh = trim_obj_to_file(self.raw_obj_path, self.dataset_path)
+        #elif not os.path.exists(self.dataset_path):
+        #    assert False and "Data does not exist and raw obj file not specified"
+        #else:
         
-    def _sample(self):
-        """Sample from a random selection of meshes."""
-
-        nrm = None
-        if self.get_normals:
-            pts, nrm = sample_surface(self.mesh, self.num_samples*5)
-            nrm = nrm.cpu()
+        if self.sample_tex:
+            out = load_obj(self.dataset_path, load_materials=True)
+            self.V, self.F, self.texv, self.texf, self.mats = out
         else:
-            pts = point_sample(self.mesh, self.sample_mode, self.num_samples)
-        d = self.evaluate_distance(pts.cuda(), self.mesh.cuda()).unsqueeze(1)
-        ids = torch.zeros_like(d)
-        d = d.cpu()
-        pts = pts.cpu()
-        ids = ids.cpu()
-        # Do I really want to flip the points?
-        return ids, pts, d, nrm
+            self.V, self.F = load_obj(self.dataset_path)
+
+        #self.V, self.F = normalize(self.V, self.F)
+        self.mesh = self.V[self.F]
+        self.resample()
 
     def resample(self):
         """Resample SDF samples."""
 
-        self.ids, self.p, self.d, self.nrm = self._sample()
-    
+        self.nrm = None
+        if self.get_normals:
+            self.pts, self.nrm = sample_surface(self.V, self.F, self.num_samples*5)
+            self.nrm = self.nrm.cpu()
+        else:
+            self.pts = point_sample(self.V, self.F, self.sample_mode, self.num_samples)
+
+        self.d = compute_sdf(self.V.cuda(), self.F.cuda(), self.pts.cuda())   
+
+        self.d = self.d[...,None]
+        self.d = self.d.cpu()
+        self.pts = self.pts.cpu()
+
     def __getitem__(self, idx: int):
         """Retrieve point sample."""
         if self.get_normals:
-            return self.ids[idx], self.p[idx], self.d[idx], self.nrm[idx]
+            return self.pts[idx], self.d[idx], self.nrm[idx]
+        elif self.sample_tex:
+            return self.pts[idx], self.d[idx], self.rgb[idx]
         else:
-            return self.ids[idx], self.p[idx], self.d[idx]
+            return self.pts[idx], self.d[idx]
             
     def __len__(self):
         """Return length of dataset (number of _samples_)."""
 
-        return self.p.size()[0]
+        return self.pts.size()[0]
 
     def num_shapes(self):
         """Return length of dataset (number of _mesh models_)."""
 
         return 1
-
-    def evaluate_distance(self, points: torch.Tensor, mesh: torch.Tensor):
-        """
-        Args:
-            points (torch.Tensor): 3D sample points
-            mesh (torch.Tensor): triangle mesh
-
-        Returns:
-            torch.Tensor: Signed distance for all input points
-        """
-
-        dist = mesh2sdf.mesh2sdf_gpu(points.contiguous(), mesh)[0]
-        return dist
-

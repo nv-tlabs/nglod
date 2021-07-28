@@ -38,34 +38,16 @@ class BaseLOD(BaseSDF):
         super().__init__(args)
         self.num_lods = args.num_lods
         self.lod = None
-        self.shrink_idx = (self.num_lods - 1)
-        self.bias = True
 
+    def forward(self, x, lod=None):
+        if lod is None:
+            lod = self.lod
+        x = self.encode(x)
+        return self.sdf(x)
 
-    def grow(self):
-        if self.shrink_idx > 0:
-            self.shrink_idx -= 1
-            log.info(f'Shrinking network by one layer: {self.shrink_idx + 1} to {self.shrink_idx}')
+    def sdf(self, x, lod=None):
+        if lod is None:
+            lod = self.lod
+        return None
 
-    def loss(self, writer=None, epoch=None):
-        loss_val = torch.zeros_like(self.gts).squeeze()
-        loss_dict = {}
-
-        loss_dict['_l2_loss'] = 0
-        for pred in self.loss_preds:
-            loss_dict['_l2_loss'] = l2_loss(pred, self.gts).squeeze()
-
-            for l in self.args.loss:
-                if l not in loss_dict:
-                    loss_dict[l] = 0
-                if l == 'gradient_loss':
-                    raise NotImplementedError
-                    loss_dict[l] += globals()[l](self.inputs, self, self.grad).squeeze()
-                elif l == 'eikonal_loss':
-                    loss_dict[l] = globals()[l](self.inputs, self, self.grad).squeeze()
-                else:
-                    loss_dict[l] += globals()[l](pred, self.gts).squeeze()
-                #if writer is not None:
-                #    writer.add_scalar('Loss/{}'.format(l), _loss, epoch)
-        return loss_dict
 

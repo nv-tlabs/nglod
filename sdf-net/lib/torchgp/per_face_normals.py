@@ -19,14 +19,15 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
 import torch
 
-def per_face_normals(mesh : torch.Tensor):
+def per_face_normals(
+    V : torch.Tensor,
+    F : torch.Tensor):
     """Compute normals per face.
-
-    Args:
-        mesh (torch.Tensor): #F, 3, 3 array of vertices
     """
+    mesh = V[F]
 
     vec_a = mesh[:, 0] - mesh[:, 1]
     vec_b = mesh[:, 1] - mesh[:, 2]

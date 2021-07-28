@@ -55,7 +55,7 @@ class FeatureVolume(nn.Module):
             sample_coords = x.reshape(1, N, x.shape[1], 1, 3) # [N, 1, 1, 3]    
             sample = F.grid_sample(self.fm, sample_coords, 
                                    align_corners=True, padding_mode='border')[0,:,:,:,0].permute([1,2,0])
-
+        
         return sample
 
 class OctreeSDF(BaseLOD):
@@ -75,7 +75,6 @@ class OctreeSDF(BaseLOD):
 
         self.louts = nn.ModuleList([])
 
-
         self.sdf_input_dim = self.fdim
         if not self.pos_invariant:
             self.sdf_input_dim += self.input_dim
@@ -86,27 +85,23 @@ class OctreeSDF(BaseLOD):
             self.louts.append(
                 nn.Sequential(
                     nn.Linear(self.sdf_input_dim, self.hidden_dim, bias=True),
-                    #nn.GeLU(),
                     nn.ReLU(),
                     nn.Linear(self.hidden_dim, 1, bias=True),
                 )
             )
-
-
+        
     def encode(self, x):
-        # Disable encoding at this level
+        # Disable encoding
         return x
-    
-    def grow(self):
-        if self.shrink_idx > 0:
-            self.shrink_idx -= 1
 
-    def sdf(self, x, return_lst=False):
+    def sdf(self, x, lod=None, return_lst=False):
+        if lod is None:
+            lod = self.lod
+        
         # Query
-
         l = []
         samples = []
-        
+
         for i in range(self.num_lods):
             
             # Query features
@@ -132,12 +127,12 @@ class OctreeSDF(BaseLOD):
             d = curr_decoder(ex_sample)
 
             # Interpolation mode
-            if self.interpolate is not None and self.lod is not None:
+            if self.interpolate is not None and lod is not None:
                 
                 if i == len(self.louts) - 1:
                     return d
 
-                if self.lod+1 == i:
+                if lod+1 == i:
                     _ex_sample = samples[i-1]
                     if not self.pos_invariant:
                         _ex_sample = torch.cat([x, _ex_sample], dim=-1)
@@ -148,41 +143,17 @@ class OctreeSDF(BaseLOD):
             # Get distance
             else: 
                 d = curr_decoder(ex_sample)
-                self.h = samples[i]
-                
+
                 # Return distance if in prediction mode
-                if self.lod is not None and self.lod == i:
+                if lod is not None and lod == i:
                     return d
 
                 l.append(d)
-
-        self.loss_preds = l
+        if self.training:
+            self.loss_preds = l
 
         if return_lst:
             return l
         else:
             return l[-1]
     
-    def loss(self, writer=None, epoch=None):
-        loss_val = torch.zeros_like(self.gts).squeeze()
-        loss_dict = {}
-
-        loss_dict['_l2_loss'] = 0
-        for pred in self.loss_preds:
-            loss_dict['_l2_loss'] = l2_loss(pred, self.gts).squeeze()
-
-            for l in self.args.loss:
-                if l not in loss_dict:
-                    loss_dict[l] = 0
-                if l == 'gradient_loss':
-                    raise NotImplementedError
-                    loss_dict[l] += globals()[l](self.inputs, self, self.grad).squeeze()
-                elif l == 'eikonal_loss':
-                    loss_dict[l] += multilayer_eikonal_loss(self.inputs, self, self.grad).squeeze()
-                elif l == 'sparsity_loss':
-                    loss_dict[l] += sparsity_loss(pred, self, self.gts).squeeze()
-                else:
-                    loss_dict[l] += globals()[l](pred, self.gts).squeeze()
-        return loss_dict
-
-

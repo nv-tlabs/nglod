@@ -19,35 +19,20 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 import torch
-from .random_face import random_face
-from .area_weighted_distribution import area_weighted_distribution
 
-def sample_surface(
+def normalize(
     V : torch.Tensor,
-    F : torch.Tensor,
-    num_samples : int,
-    distrib = None):
-    """Sample points and their normals on mesh surface.
+    F : torch.Tensor):
 
-    Args:
-        V (torch.Tensor): #V, 3 array of vertices
-        F (torch.Tensor): #F, 3 array of indices
-        num_samples (int): number of surface samples
-        distrib: distribution to use. By default, area-weighted distribution is used
-    """
-    if distrib is None:
-        distrib = area_weighted_distribution(V, F)
+    # Normalize mesh
+    V_max, _ = torch.max(V, dim=0)
+    V_min, _ = torch.min(V, dim=0)
+    V_center = (V_max + V_min) / 2.
+    V = V - V_center
 
-    # Select faces & sample their surface
-    fidx, normals = random_face(V, F, num_samples, distrib)
-    f = V[fidx]
-
-    u = torch.sqrt(torch.rand(num_samples)).to(V.device).unsqueeze(-1)
-    v = torch.rand(num_samples).to(V.device).unsqueeze(-1)
-
-    samples = (1 - u) * f[:,0,:] + (u * (1 - v)) * f[:,1,:] + u * v * f[:,2,:]
-    
-    return samples, normals
-
+    # Find the max distance to origin
+    max_dist = torch.sqrt(torch.max(torch.sum(V**2, dim=-1)))
+    V_scale = 1. / max_dist
+    V *= V_scale
+    return V, F
