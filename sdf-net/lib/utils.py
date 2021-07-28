@@ -29,6 +29,15 @@ import torch
 
 # General utilities
 
+# This is the bridge between an argparse based approach and a non-argparse one
+def setparam(args, param, paramstr):
+    argsparam = getattr(args, paramstr, None)
+    if param is not None or argsparam is None:
+        return param
+    else:
+        return argsparam
+
+
 # from https://stackoverflow.com/questions/11130156/suppress-stdout-stderr-print-from-python-functions
 # Define a context manager to suppress stdout and stderr.
 class suppress_output(object):
