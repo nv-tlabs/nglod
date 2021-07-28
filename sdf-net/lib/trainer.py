@@ -28,7 +28,6 @@ import sys
 import pprint
 import logging as log
 
-import cupy
 import matplotlib.pyplot
 from PIL import Image
 import numpy as np

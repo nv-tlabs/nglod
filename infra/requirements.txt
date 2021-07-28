@@ -2,7 +2,6 @@ torch==1.6.0
 torchvision==0.7.0
 tensorboard
 matplotlib
-cupy-cuda111
 git+https://github.com/tinyobjloader/tinyobjloader.git#subdirectory=python
 pybind11
 trimesh>=3.0

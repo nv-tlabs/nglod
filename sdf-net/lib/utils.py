@@ -22,10 +22,10 @@
 import os
 import sys
 import time
-import cupy as cp
 import numpy as np
 import pprint
 import argparse
+import torch
 
 # General utilities
 
@@ -86,24 +86,28 @@ def colorize_time(elapsed):
 class PerfTimer():
     def __init__(self, activate=False):
         self.prev_time = time.process_time()
-        self.stream = cp.cuda.Stream.null
-        self.prev_time_gpu = self.stream.record()
+        self.start = torch.cuda.Event(enable_timing=True)
+        self.end = torch.cuda.Event(enable_timing=True)
+        self.prev_time_gpu = self.start.record()
         self.counter = 0
         self.activate = activate
 
     def reset(self):
         self.counter = 0
         self.prev_time = time.process_time()
-        self.stream = cp.cuda.Stream.null
+        self.start = torch.cuda.Event(enable_timing=True)
+        self.end = torch.cuda.Event(enable_timing=True)
+        self.prev_time_gpu = self.start.record()
 
     def check(self, name=None):
         if self.activate:
             cpu_time = time.process_time() - self.prev_time
             cpu_time = colorize_time(cpu_time)
           
-            end = self.stream.record()
-            end.synchronize()
-            gpu_time = cp.cuda.get_elapsed_time(self.prev_time_gpu, end) / 1000
+            self.end.record()
+            torch.cuda.synchronize()
+
+            gpu_time = self.start.elapsed_time(self.end) / 1e3
             gpu_time = colorize_time(gpu_time)
             if name:
                 print("CPU Checkpoint {}: {} s".format(name, cpu_time))
@@ -113,7 +117,7 @@ class PerfTimer():
                 print("GPU Checkpoint {}: {} s".format(self.counter, gpu_time))
 
             self.prev_time = time.process_time()
-            self.prev_time_gpu = self.stream.record()
+            self.prev_time_gpu = self.start.record()
             self.counter += 1
             return cpu_time, gpu_time
 

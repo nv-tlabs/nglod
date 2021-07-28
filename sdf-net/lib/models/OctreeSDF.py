@@ -22,7 +22,6 @@
 import math 
 
 import numpy as np
-import cupy as xp
 
 import torch
 import torch.nn as nn
