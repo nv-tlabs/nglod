@@ -24,7 +24,7 @@ import pdb
 import torch
 import polyscope as ps
 
-from .meshutils import load_obj
+from .torchgp import load_obj
 
 class PsDebugger:
     def __init__(self):
@@ -52,7 +52,7 @@ class PsDebugger:
         self.pcls[pcl_name].add_color_quantity(c_name, tensor.reshape(-1, 3).numpy(), **kwargs)
 
     def add_surface_mesh(self, name, obj_path, **kwargs):
-        verts, faces = load_obj_robust(obj_path)
+        verts, faces = load_obj(obj_path)
         ps.register_surface_mesh(name, verts.numpy(), faces.numpy(), **kwargs)
     
     def show(self):

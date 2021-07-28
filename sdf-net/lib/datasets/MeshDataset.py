@@ -29,7 +29,6 @@ import pysdf
 import mesh2sdf
 import spc
 
-from ..meshutils import trim_obj_to_file
 from ..torchgp import load_obj, point_sample, sample_surface, compute_sdf, normalize
 from ..PsDebugger import PsDebugger
 
