@@ -68,7 +68,7 @@ def load_obj(
         fname (str): path to Wavefront .obj file
     """
 
-    assert os.path.exists(fname), \
+    assert fname is not None and os.path.exists(fname), \
         'Invalid file path and/or format, must be an existing Wavefront .obj'
 
     reader = tinyobjloader.ObjReader()
