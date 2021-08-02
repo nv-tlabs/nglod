@@ -69,10 +69,6 @@ chmod +x build_ext.sh && ./build_ext.sh
 
 The above instructions were tested on Ubuntu 18.04/20.04 with CUDA 10.2/11.1.
 
-**Note.** If you wish to use CUDA 10.X, you must install the appropriate 
-[CuPy](https://pypi.org/project/cupy/) module (e.g. `pip install cupy-cuda102`. Default: 11.1).
-
-
 ## Training & Rendering
 
 **Note.** All following commands should be ran within the `sdf-net` directory.
