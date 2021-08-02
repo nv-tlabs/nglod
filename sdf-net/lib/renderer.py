@@ -164,7 +164,7 @@ class Renderer():
         ######################
         # Relative Depth
         ######################
-        rb.relative_depth = torch.clip(rb.depth, 0.0, self.camera_clamp[1]) / self.camera_clamp[1]
+        rb.relative_depth = torch.clamp(rb.depth, 0.0, self.camera_clamp[1]) / self.camera_clamp[1]
 
         ######################
         # Shading Rendering

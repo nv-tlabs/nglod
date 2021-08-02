@@ -270,7 +270,7 @@ def spherical_envmap(ray_dir, normal):
     vN = (r[...,:2] / m) + 0.5
     vN = 1.0 - vN
     vN = vN[...,:2].reshape(-1, 2)
-    vN = torch.clip(vN, 0.0, 1.0)
+    vN = torch.clamp(vN, 0.0, 1.0)
     vN[torch.isnan(vN)] = 0
     return vN
 

@@ -50,7 +50,7 @@ def barycentric_coordinates(
     denom = d00*d11 - d01*d01
     L = torch.zeros(points.shape[0], 3, device=points.device)
     # Warning: This clipping may cause undesired behaviour
-    L[...,1] = torch.clip((d11*d20 - d01*d21)/denom, 0.0, 1.0)
-    L[...,2] = torch.clip((d00*d21 - d01*d20)/denom, 0.0, 1.0)
-    L[...,0] = torch.clip(1.0 - (L[...,1] + L[...,2]), 0.0, 1.0)
+    L[...,1] = torch.clamp((d11*d20 - d01*d21)/denom, 0.0, 1.0)
+    L[...,2] = torch.clamp((d00*d21 - d01*d20)/denom, 0.0, 1.0)
+    L[...,0] = torch.clamp(1.0 - (L[...,1] + L[...,2]), 0.0, 1.0)
     return L
