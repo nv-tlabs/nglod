@@ -69,7 +69,7 @@ class MeshDataset(Dataset):
         else:
             self.V, self.F = load_obj(self.dataset_path)
 
-        #self.V, self.F = normalize(self.V, self.F)
+        self.V, self.F = normalize(self.V, self.F)
         self.mesh = self.V[self.F]
         self.resample()
 

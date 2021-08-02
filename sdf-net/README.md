@@ -28,8 +28,7 @@ wget https://raw.githubusercontent.com/nidorx/matcaps/master/1024/6E8C48_B8CDA7_
 python app/main.py \
     --net OctreeSDF \
     --num-lods 5 \
-    --dataset-path data/armadillo_normalized.obj \
-    --raw-obj-path data/armadillo.obj \
+    --dataset-path data/armadillo.obj \
     --epoch 250 \
     --exp-name armadillo
 ```
