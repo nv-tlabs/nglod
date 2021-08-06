@@ -64,8 +64,6 @@ class BasicDecoder(nn.Module):
         self.layers = nn.ModuleList(layers)
         self.lout = nn.Linear(self.hidden_dim, self.output_dim, bias=self.bias)
         
-        init_decoder(self, args)
-
     def forward(self, x, return_h=False):
         N = x.shape[0]
 
