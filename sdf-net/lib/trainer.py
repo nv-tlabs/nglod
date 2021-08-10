@@ -200,7 +200,6 @@ class Trainer(object):
         """
         if self.args.exp_name:
             self.log_fname = self.args.exp_name
-            self.log_fname += f'/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
         else:
             self.log_fname = f'{datetime.now().strftime("%Y%m%d-%H%M%S")}'
         self.log_dir = os.path.join(self.args.logs, self.log_fname)
