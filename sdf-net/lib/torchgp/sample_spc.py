@@ -19,17 +19,26 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from .area_weighted_distribution import area_weighted_distribution
-from .random_face import random_face
-from .point_sample import point_sample
-from .sample_surface import sample_surface
-from .sample_near_surface import sample_near_surface
-from .sample_uniform import sample_uniform
-from .load_obj import load_obj
-from .compute_sdf import compute_sdf
-from .normalize import normalize
-from .barycentric_coordinates import barycentric_coordinates
-from .sample_tex import sample_tex
-from .per_face_normals import per_face_normals
-from .sample_spc import sample_spc
+
+import torch
+
+
+def sample_spc(
+    corners     : torch.Tensor, 
+    level       : int,
+    num_samples : int):
+    """Sample uniformly in [-1,1] bounding volume within SPC voxels
+    
+    Args:
+        corners (tensor)  : set of corners to sample from
+        level (int)       : level to sample from 
+        num_samples (int) : number of points to sample
+    """
+
+    res = 2.0**level
+    samples = torch.rand(corners.shape[0], num_samples, 3, device=corners.device)
+    samples = corners[...,None,:3] + samples
+    samples = samples.reshape(-1, 3)
+    samples /= res
+    return samples * 2.0 - 1.0
 
