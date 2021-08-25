@@ -198,7 +198,7 @@ def parse_options(return_parser=False):
     renderer_group.add_argument('--matcap-path', type=str, 
                                 default='data/matcap/green.png', 
                                 help='Path to the matcap texture to render with.')
-    renderer_group.add_argument('--camera-origin', type=float, nargs=3, default=[2.8, 2.8, 2.8], 
+    renderer_group.add_argument('--camera-origin', type=float, nargs=3, default=[-2.8, 2.8, -2.8], 
                                 help='Camera origin.')
     renderer_group.add_argument('--camera-lookat', type=float, nargs=3, default=[0, 0, 0], 
                                 help='Camera look-at/target point.')
