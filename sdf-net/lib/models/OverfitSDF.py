@@ -33,8 +33,8 @@ class OverfitSDF(BaseSDF):
     def __init__(self, args):
         super().__init__(args)
         
-        self.decoder = BasicDecoder(self.args, self.input_dim)
+        self.decoder = BasicDecoder(self.input_dim, self.out_dim, F.relu, True, self.args)
 
-    def sdf(self, x):
+    def sdf(self, x, lod=None):
         return self.decoder(x)
 
