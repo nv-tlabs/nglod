@@ -25,14 +25,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .losses import *
-
-from .BasicDecoder import BasicDecoder
-
-from typing import Optional
-
-from .Embedder import positional_encoding
-from ..utils import setparam
+from lib.models.Embedder import positional_encoding
+from lib.models.BasicDecoder import BasicDecoder
+from lib.utils import setparam
 
 class BaseSDF(nn.Module):
     def __init__(self,

@@ -24,7 +24,7 @@ import pdb
 import torch
 import polyscope as ps
 
-from .torchgp import load_obj
+from lib.torchgp import load_obj
 
 class PsDebugger:
     def __init__(self):

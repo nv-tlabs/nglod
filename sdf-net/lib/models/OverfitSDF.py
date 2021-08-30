@@ -25,9 +25,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .BaseSDF import BaseSDF
-from .BasicDecoder import BasicDecoder
-from .utils import init_decoder
+from lib.models.BaseSDF import BaseSDF
+from lib.models.BasicDecoder import BasicDecoder
 
 class OverfitSDF(BaseSDF):
     def __init__(self, args):

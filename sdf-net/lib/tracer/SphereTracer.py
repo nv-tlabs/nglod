@@ -25,14 +25,14 @@ import torch.nn.functional as F
 import torch.nn as nn
 import numpy as np
 
-from ..utils import PerfTimer
-from ..diffutils import gradient
-from ..geoutils import sample_unif_sphere
-from .RenderBuffer import RenderBuffer
+from lib.utils import PerfTimer
+from lib.diffutils import gradient
+from lib.geoutils import sample_unif_sphere
+from lib.tracer.RenderBuffer import RenderBuffer
 
-from ..PsDebugger import PsDebugger
+from lib.PsDebugger import PsDebugger
 
-from .BaseTracer import BaseTracer
+from lib.tracer.BaseTracer import BaseTracer
 
 from sol_nglod import aabb
 

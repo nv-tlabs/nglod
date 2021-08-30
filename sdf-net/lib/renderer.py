@@ -29,13 +29,13 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 from PIL import Image
 
-from .utils import PerfTimer, setparam
-from .diffutils import gradient
-from .geoutils import normalize, look_at, compute_normal, matcap_sampler, spherical_envmap
-from .geoutils import normalized_slice
-from .PsDebugger import PsDebugger
+from lib.utils import PerfTimer, setparam
+from lib.diffutils import gradient
+from lib.geoutils import normalize, look_at, compute_normal, matcap_sampler, spherical_envmap
+from lib.geoutils import normalized_slice
+from lib.PsDebugger import PsDebugger
 
-from .tracer import *
+from lib.tracer import *
 
 class Renderer():
     """Main renderer class."""

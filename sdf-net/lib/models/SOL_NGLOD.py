@@ -24,9 +24,9 @@ import numpy as np
 import torch
 import sol_nglod
 
-from ..spc3d import SPC3D, to_morton
-from ..renderutils import voxel_sparsify, sample_surface
-from ..geoutils import unique_corners
+from lib.spc3d import SPC3D, to_morton
+from lib.renderutils import voxel_sparsify, sample_surface
+from lib.geoutils import unique_corners
 
 class SOL_NGLOD(object):
     def __init__(self, net):

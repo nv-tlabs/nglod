@@ -21,7 +21,7 @@
 
 import numpy as np
 
-from ..utils import setparam
+from lib.utils import setparam
 
 class BaseTracer(object):
     """Virtual base class for tracer"""

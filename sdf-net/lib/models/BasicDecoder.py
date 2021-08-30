@@ -25,10 +25,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .utils import init_decoder
-from ..utils import setparam
-
-from scipy.stats import ortho_group
+from lib.utils import setparam
 
 class BasicDecoder(nn.Module):
     def __init__(self, 

@@ -42,13 +42,13 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import Dataset, DataLoader
 from tqdm.auto import tqdm
 
-from .datasets import *
-from .diffutils import positional_encoding, gradient
-from .models import *
-from .renderer import Renderer
-from .tracer import *
-from .utils import PerfTimer, image_to_np, suppress_output
-from .validator import *
+from lib.datasets import *
+from lib.diffutils import positional_encoding, gradient
+from lib.models import *
+from lib.renderer import Renderer
+from lib.tracer import *
+from lib.utils import PerfTimer, image_to_np, suppress_output
+from lib.validator import *
 
 class Trainer(object):
     """

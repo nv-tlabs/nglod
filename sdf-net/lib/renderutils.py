@@ -21,9 +21,9 @@
 
 import numpy as np
 import torch
-from .renderer import SphereTracer
-from .geoutils import sample_unif_sphere, voxel_corners
-from .utils import PerfTimer
+from lib.renderer import SphereTracer
+from lib.geoutils import sample_unif_sphere, voxel_corners
+from lib.utils import PerfTimer
 
 # Utils that use rendering features
 

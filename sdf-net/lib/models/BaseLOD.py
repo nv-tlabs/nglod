@@ -26,12 +26,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .BaseSDF import BaseSDF
-from .utils import init_decoder
-
-from .losses import *
-
-from ..diffutils import gradient
+from lib.models.BaseSDF import BaseSDF
 
 class BaseLOD(BaseSDF):
     def __init__(self, args):

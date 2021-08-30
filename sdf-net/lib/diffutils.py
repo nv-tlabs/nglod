@@ -22,7 +22,7 @@
 import torch
 import torch.nn.functional as F
 
-from .utils import PerfTimer
+from lib.utils import PerfTimer
 
 # Differentiable Operators for General Functions
 

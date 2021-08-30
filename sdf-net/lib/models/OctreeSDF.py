@@ -27,11 +27,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .BaseLOD import BaseLOD
-from .BasicDecoder import BasicDecoder
-from .utils import init_decoder
-from .losses import *
-from ..utils import PerfTimer
+from lib.models.BaseLOD import BaseLOD
+from lib.models.BasicDecoder import BasicDecoder
+from lib.utils import PerfTimer
 
 class MyActivation(nn.Module):
     def forward(self, x):

@@ -22,7 +22,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..diffutils import gradient
+from lib.diffutils import gradient
 
 def l1_loss(pred, gts):
     return torch.abs(pred - gts)

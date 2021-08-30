@@ -29,8 +29,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
-from ..datasets import *
-from .metrics import *
+from lib.datasets import *
+from lib.validator.metrics import *
 
 class GeometricValidator(object):
     """Geometric validation; sample 3D points for distance/occupancy metrics."""
