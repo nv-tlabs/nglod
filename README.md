@@ -30,7 +30,7 @@ If you find this code useful, please consider citing:
 
 ## Directory Structure
 
-`sol-renderer` contains our real-time rnedering code.
+`sol-renderer` contains our real-time rendering code.
 
 `sdf-net` contains our training code.
 
