@@ -28,6 +28,8 @@ If you find this code useful, please consider citing:
 }
 ```
 
+**New: Sparse training code with [Kaolin](https://github.com/NVIDIAGameWorks/kaolin) now available in `app/spc`! Read more about it [here](https://developer.nvidia.com/blog/new-nvidia-kaolin-library-release-streamlines-3d-deep-learning-research-workflows/)**
+
 ## Directory Structure
 
 `sol-renderer` contains our real-time rnedering code.
