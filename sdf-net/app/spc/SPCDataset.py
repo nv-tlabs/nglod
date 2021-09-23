@@ -215,7 +215,7 @@ class SPCDataset(Dataset):
     def __len__(self):
         """Return length of dataset (number of _samples_)."""
 
-        return self.pts.size()[0]
+        return self.pts.shape[0]
 
     def num_shapes(self):
         """Return length of dataset (number of _mesh models_)."""

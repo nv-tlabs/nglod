@@ -183,6 +183,7 @@ class SPCTrainer(Trainer):
 
     def resample(self, epoch):
         self.train_dataset.resample(max(self.loss_lods), self.block_idxes[self.active_block_idx])
+        log.info("Dataset Size: {}".format(len(self.train_dataset)))
 
 # Set logger display format
 log.basicConfig(format='[%(asctime)s] [INFO] %(message)s', 

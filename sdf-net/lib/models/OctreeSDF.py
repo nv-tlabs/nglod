@@ -67,8 +67,7 @@ class OctreeSDF(BaseLOD):
 
         self.features = nn.ModuleList([])
         for i in range(self.args.num_lods):
-            self.features.append(FeatureVolume(self.fdim, self.fsize * (2**i)))
-    
+            self.features.append(FeatureVolume(self.fdim, (2**(i+self.args.base_lod))))
         self.interpolate = self.args.interpolate
 
         self.louts = nn.ModuleList([])
