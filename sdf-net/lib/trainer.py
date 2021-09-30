@@ -151,6 +151,8 @@ class Trainer(object):
         """
 
         self.train_dataset = globals()[self.args.mesh_dataset](self.args)
+
+        log.info("Dataset Size: {}".format(len(self.train_dataset)))
         
         self.train_data_loader = DataLoader(self.train_dataset, batch_size=self.args.batch_size, 
                                             shuffle=True, pin_memory=True, num_workers=0)
