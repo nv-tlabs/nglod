@@ -138,7 +138,8 @@ if __name__ == '__main__':
             rad = np.radians(angle)
             model_matrix = torch.FloatTensor(R.from_rotvec(rad * np.array([0, 1, 0])).as_matrix())
 
-            out = renderer.shade_images(f=args.camera_origin,
+            out = renderer.shade_images(net=net,
+                                        f=args.camera_origin,
                                         t=args.camera_lookat,
                                         fov=args.camera_fov,
                                         aa=not args.disable_aa,
@@ -159,7 +160,8 @@ if __name__ == '__main__':
         views = sample_fib_sphere(args.nb_poses)
         cam_origins = args.cam_radius * views
         for p, cam_origin in enumerate(cam_origins):
-            out = renderer.shade_images(f=cam_origin,
+            out = renderer.shade_images(net=net,
+                                        f=cam_origin,
                                         t=args.camera_lookat,
                                         fov=args.camera_fov,
                                         aa=not args.disable_aa,
